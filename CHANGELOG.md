@@ -1,0 +1,110 @@
+<!-- version number should be already in the releases title, no need to repeat here. -->
+## What's changed
+
+
+<details><summary>Features (2)</summary>
+
+- **longRunningMigrations**: keep migration lock fresh with a heartbeat ([#7270](https://github.com/kobotoolbox/kpi/pull/7270))
+    > <!-- 📣 Summary -->
+    > 
+    > Background data migrations can now run for up to 24 hours per pass and
+    > recover on their own if a server is restarted, so they finish more
+    > reliably.
+    > 
+    > <!-- 📖 Description -->
+    > 
+    > Some database maintenance tasks run in the background over a very large
+    > amount of data. Until now each pass was capped at about 71 minutes, and
+    > if the server running one was restarted it could stay stuck for a long
+    > time before another server picked it up. These tasks now get up to 24
+    > hours per pass and are retried within minutes if their server goes away,
+    > so they complete without manual intervention.
+    > 
+    > ### 👷 Description for instance maintainers
+    > 
+    > Long-running migrations now get a dedicated, much longer time budget, up
+    > to about 24 hours per run, separate from the shared limits used by other
+    > background tasks (those keep their current values). New environment
+    > variables let you tune this:
+    > `CELERY_LONG_RUNNING_MIGRATION_TASK_TIME_LIMIT`,
+    > `CELERY_LONG_RUNNING_MIGRATION_TASK_SOFT_TIME_LIMIT`,
+    > `CELERY_LONG_RUNNING_MIGRATION_TASK_HEARTBEAT_INTERVAL` and
+    > `CELERY_LONG_RUNNING_MIGRATION_TASK_HEARTBEAT_TTL`.
+    > 
+    > While a migration runs, a background heartbeat keeps its lock alive with
+    > a short lease and records that it is still making progress. If the
+    > worker running it dies (for example a Kubernetes pod eviction), the
+    > lease expires within a few minutes and the migration is picked up again
+    > automatically, instead of being blocked until the old time limit
+    > elapsed.
+    > 
+    > No database schema change and no new migration to run. The defaults are
+    > safe, so no configuration change is required.
+
+- **tags**: [**breaking**] remove tag detail endpoint ([#7280](https://github.com/kobotoolbox/kpi/pull/7280))
+    > <!-- 📣 Summary -->
+    > 
+    > Remove `/api/v2/tags/<tag uid>` detail endpoint from the API.
+    > 
+    > <!-- 📖 Description -->
+    > 
+    > Remove `/api/v2/tags/<tag uid>` detail endpoint from the API. All
+    > information that was available there can be obtained either from the
+    > list endpoint, `/api/v2/tags`, or by querying the asset endpoint, e.g.
+    > `/api/v2/assets/?q=tags__name:<tag name>`. Note that `tags` is plural in
+    > `tags__name`.
+    > 
+    > ### 👷 Description for instance maintainers
+    > 
+    > The tags detail API was unused by the application and likely unused by
+    > external parties given that it was broken in most cases: whenever a tag
+    > was associated with multiple assets accessible to the current user, a
+    > 500 error was returned due to missing `distinct()` on the queryset after
+    > permission joins.
+    > 
+    > The detail view also provided an `assets` array that started leaking the
+    > URLs of all assets on the server after #5994 was merged.
+
+</details>
+
+<details><summary>Bug Fixes (4)</summary>
+
+- **account**: delete button disabled check ([#7269](https://github.com/kobotoolbox/kpi/pull/7269))
+    > <!-- 📣 Summary -->
+    > 
+    > Fixed an issue where users who deleted all their projects could still be
+    > blocked from deleting their account because non-project assets were
+    > counted by mistake.
+
+- **longRunningMigrations**: do not tag XForm as failed on Celery timeout ([#7267](https://github.com/kobotoolbox/kpi/pull/7267))
+    > <!-- 📣 Summary -->
+    > 
+    > A background data-repair task could permanently skip a form's
+    > submissions, either when it ran out of time or when it hit an old
+    > submission it did not know how to handle. It now resumes on the next
+    > cycle and handles those old submissions instead of giving up for good.
+
+- **project settings**: remove deployment check for showing anonymous submission permission option ([#7277](https://github.com/kobotoolbox/kpi/pull/7277))
+    > <!-- 📣 Summary -->
+    > Removes a check for project deployment status that determined whether or
+    > not the checkbox for enabling anonymous users to view submission data
+    > was visible, so users can now view/toggle option for undeployed
+    > projects.
+
+- **project-views**: return asset_count for users list ([#7264](https://github.com/kobotoolbox/kpi/pull/7264))
+    > <!-- 📣 Summary -->
+    > 
+    > Fixes a server error when listing the users of a project view.
+    > 
+    > <!-- 📖 Description -->
+    > 
+    > Opening the **Users** tab of a project view failed with a server error
+    > and showed no one. The list now loads correctly again, including each
+    > user's project count.
+
+</details>
+
+****
+
+**Full Changelog**: https://github.com/kobotoolbox/kpi/compare/2.026.27a..2.026.27b
+<!-- generated by git-cliff -->
