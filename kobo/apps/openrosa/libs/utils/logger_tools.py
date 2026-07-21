@@ -909,29 +909,21 @@ def get_soft_deleted_attachments(instance: Instance) -> list[Attachment]:
     # Parse instance XML to get the basename of each file of the updated
     # submission
     xml_parsed = fromstring_preserve_root_xmlns(instance.xml)
-    basenames = []
-
-    for media_question_xpath in media_question_xpaths:
-        root_name, xpath_without_root = media_question_xpath.split('/', 1)
-        try:
-            assert root_name == xml_parsed.tag
-        except AssertionError:
-            logging.warning(
-                'Instance XML root tag name does not match with its form'
-            )
-
-        # With repeat groups, several nodes can have the same XPath. We
-        # need to retrieve all of them
-        questions = xml_parsed.findall(xpath_without_root)
-        for question in questions:
-            try:
-                basename = question.text
-            except AttributeError:
-                raise XPathNotFoundException
-
-            # Only keep non-empty fields
-            if basename:
-                basenames.append(basename)
+    # PATCH(kobo-migration, attachment-retention): retention is decided by
+    # whether an attachment's basename appears as a node value ANYWHERE in the
+    # submitted instance, instead of at a media-question XPath derived from the
+    # currently-deployed form. The XPath approach (get_xform_media_question_xpaths)
+    # fails when a submission was collected against an older form version whose
+    # structure — e.g. auto-generated group names — differs from the deployed
+    # version, wrongly soft-deleting image attachments while background audio
+    # survived only via the exemption below. Value matching is robust to that
+    # drift and still soft-deletes replaced attachments on edits, because a
+    # replaced file's old basename is absent from the new instance XML.
+    basenames = [
+        element.text.strip()
+        for element in xml_parsed.iter()
+        if element.text and element.text.strip()
+    ]
 
     # Update Attachment objects to hide them if they are not used anymore.
     # We do not want to delete them until the instance itself is deleted.
