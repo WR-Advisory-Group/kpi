@@ -4,6 +4,7 @@ import autoBind from 'react-autobind'
 import DocumentTitle from 'react-document-title'
 import reactMixin from 'react-mixin'
 import bem from '#/bem'
+import { getQualityAppUrl } from '#/components/dataQuality/dataQualityUtils'
 import LoadingSpinner from '#/components/common/loadingSpinner'
 import TransferProjects from '#/components/permissions/transferProjects/transferProjects.component'
 import FormMedia from '#/project/FormMedia'
@@ -66,6 +67,8 @@ export class FormSubScreens extends React.Component {
           return <FormMapWrapper asset={this.state} />
         case ROUTES.FORM_MAP_BY.replace(':uid', this.state.uid).replace(':viewby', this.props.params.viewby):
           return <FormMapWrapper asset={this.state} viewby={this.props.params.viewby} />
+        case ROUTES.FORM_DATA_QUALITY.replace(':uid', this.state.uid):
+          return this.renderDataQuality()
         case ROUTES.FORM_DOWNLOADS.replace(':uid', this.state.uid):
           return (
             <Suspense fallback={null}>
@@ -98,6 +101,23 @@ export class FormSubScreens extends React.Component {
         <bem.FormView>
           <bem.FormView__cell m='iframe'>
             <iframe src={iframeUrl} />
+          </bem.FormView__cell>
+        </bem.FormView>
+      </DocumentTitle>
+    )
+  }
+  renderDataQuality() {
+    // The external Data Quality app signs the user in with the KPI session
+    // cookie, so it must be served on a sibling subdomain (see dataQualityUtils)
+    return (
+      <DocumentTitle title={`${this.state.name || t('Untitled')} | KoboToolbox`}>
+        <bem.FormView>
+          <bem.FormView__cell m='iframe'>
+            <iframe
+              src={getQualityAppUrl(this.state.uid)}
+              title={t('Data Quality')}
+              allow='clipboard-write; fullscreen'
+            />
           </bem.FormView__cell>
         </bem.FormView>
       </DocumentTitle>

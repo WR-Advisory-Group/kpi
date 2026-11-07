@@ -187,6 +187,15 @@ export const router = createHashRouter(
                 />
               }
             />
+            <Route
+              path={ROUTES.FORM_DATA_QUALITY}
+              element={
+                <PermProtectedRoute
+                  protectedComponent={FormSubScreens}
+                  requiredPermissions={[PERMISSIONS_CODENAMES.view_submissions]}
+                />
+              }
+            />
             <Route path={ROUTES.FORM_PROCESSING_ROOT}>{processingRoutes()}</Route>
           </Route>
 

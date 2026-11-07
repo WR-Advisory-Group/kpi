@@ -6,6 +6,7 @@ import { NavLink } from 'react-router-dom'
 import Reflux from 'reflux'
 import assetStore from '#/assetStore'
 import bem from '#/bem'
+import { getQualityAppUrl } from '#/components/dataQuality/dataQualityUtils'
 import { PERMISSIONS_CODENAMES } from '#/components/permissions/permConstants'
 import { userCan } from '#/components/permissions/utils'
 import { withRouter } from '#/router/legacy'
@@ -13,7 +14,7 @@ import { ROUTES } from '#/router/routerConstants'
 import mixins from '../mixins'
 
 export function getFormDataTabs(assetUid) {
-  return [
+  const tabs = [
     {
       label: t('Table'),
       icon: 'k-icon k-icon-table',
@@ -40,6 +41,15 @@ export function getFormDataTabs(assetUid) {
       path: ROUTES.FORM_MAP.replace(':uid', assetUid),
     },
   ]
+  // Only where the external Data Quality app's URL can be derived from the host
+  if (getQualityAppUrl(assetUid) !== null) {
+    tabs.push({
+      label: t('Data Quality'),
+      icon: 'k-icon k-icon-check-circle',
+      path: ROUTES.FORM_DATA_QUALITY.replace(':uid', assetUid),
+    })
+  }
+  return tabs
 }
 
 class FormViewSideTabs extends Reflux.Component {
